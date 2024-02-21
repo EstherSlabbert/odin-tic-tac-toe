@@ -8,6 +8,45 @@
   </head>
   <body>
     <h1>Tic Tac Toe</h1>
+    <dialog class="player-names">
+      <form id="form">
+        <h2 id="form-heading">Add Player Names</h2>
+        <div class="form-row">
+          <label for="playerName1">Player 1 Name: </label>
+          <input
+            type="text"
+            id="playerName1"
+            name="playerName1"
+            class="input-field"
+            placeholder="Player1"
+          />
+        </div>
+        <div class="form-row">
+          <label for="playerName2">Player 2 Name: </label>
+          <input
+            type="text"
+            id="playerName2"
+            name="playerName2"
+            class="input-field"
+            placeholder="Player2"
+          />
+        </div>
+        <div class="buttons-row">
+          <button type="button" class="close-btn">Close</button>
+          <input
+            type="submit"
+            value="Submit"
+            class="submit-btn"
+            id="submit-btn"
+          />
+        </div>
+      </form>
+    </dialog>
+
+    <button class="player-names-btn" id="open-dialog">
+      Add/Change Player Names
+    </button>
+
     <div id="game">
       <div class="row">
         <div class="cell" data-row="0" data-column="0"></div>

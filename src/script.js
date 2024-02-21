@@ -76,15 +76,27 @@ const Gameboard = (function () {
   };
 })();
 
-const gameFlow = ((player1name = "Player1", player2name = "Player2") => {
+const gameFlow = (() => {
   const createPlayer = (name, marker) => {
     const getMarker = () => marker;
     return { name, getMarker };
   };
-  const player1 = createPlayer(player1name, "X");
-  const player2 = createPlayer(player2name, "O");
-  const players = [player1, player2];
+  let player1name = "Player 1";
+  let player2name = "Player 2";
+  let players = [
+    createPlayer(player1name, "X"),
+    createPlayer(player2name, "O"),
+  ];
   let activePlayer = players[0];
+  const updatePlayerNames = (name1, name2) => {
+    player1name = name1;
+    player2name = name2;
+    players = [createPlayer(player1name, "X"), createPlayer(player2name, "O")];
+    activePlayer = players[0];
+  };
+  const getPlayerNames = () => {
+    return { player1name, player2name };
+  };
 
   function switchPlayerTurn() {
     activePlayer = activePlayer === players[0] ? players[1] : players[0];
@@ -92,7 +104,53 @@ const gameFlow = ((player1name = "Player1", player2name = "Player2") => {
 
   const getActivePlayer = () => activePlayer;
 
-  return { switchPlayerTurn, getActivePlayer };
+  return {
+    switchPlayerTurn,
+    updatePlayerNames,
+    getPlayerNames,
+    getActivePlayer,
+  };
+})();
+
+const handlePlayerNames = (() => {
+  const openDialogButton = document.getElementById("open-dialog");
+  const dialog = document.querySelector("dialog.player-names");
+  const submitForm = document.querySelector("form#form");
+  const closeButton = document.querySelector("button.close-btn");
+
+  openDialogButton.addEventListener("click", () => {
+    dialog.showModal();
+  });
+
+  closeButton.addEventListener("click", () => {
+    dialog.close();
+  });
+
+  submitForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const form = document.getElementById("form");
+    const formData = new FormData(form);
+    const obj = Object.fromEntries(formData);
+    let player1Name = "Player 1";
+    let player2Name = "Player 2";
+
+    if (obj.playerName1) {
+      player1Name = obj.playerName1;
+    }
+    if (obj.playerName2) {
+      player2Name = obj.playerName2;
+    }
+
+    for (let field of document.getElementsByClassName("input-field")) {
+      field.value = "";
+    }
+
+    dialog.close();
+    gameFlow.updatePlayerNames(player1Name, player2Name);
+    playRound.startGame();
+    console.log(gameFlow.getPlayerNames());
+    console.log(gameFlow.getActivePlayer().name + "'s turn!");
+  });
 })();
 
 const playRound = (() => {
@@ -113,11 +171,15 @@ const playRound = (() => {
     });
   };
 
-  // set initial display
-  updateDisplay();
-  gameStateTextArea.innerHTML = `${
-    gameFlow.getActivePlayer().name
-  }'s turn (marker: ${gameFlow.getActivePlayer().getMarker()})`;
+  const startGame = () => {
+    // set initial display
+    updateDisplay();
+    gameStateTextArea.innerHTML = `${
+      gameFlow.getActivePlayer().name
+    }'s turn (marker: ${gameFlow.getActivePlayer().getMarker()})`;
+  };
+
+  startGame();
 
   const handleBoardSquareClick = (boardSquare) => {
     // prevents rewriting
@@ -166,6 +228,9 @@ const playRound = (() => {
       boardSquare.innerHTML = "";
     });
     document.getElementById("end").innerHTML = "";
+    gameStateTextArea.innerHTML = `${
+      gameFlow.getActivePlayer().name
+    }'s turn (marker: ${gameFlow.getActivePlayer().getMarker()})`;
     removeEventListeners();
     playRound;
   });
@@ -188,4 +253,6 @@ const playRound = (() => {
       return;
     }
   };
+
+  return { startGame: startGame };
 })();
