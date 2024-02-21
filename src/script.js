@@ -104,11 +104,18 @@ const gameFlow = (() => {
 
   const getActivePlayer = () => activePlayer;
 
+  const updateWinnerName = (winnerName) => {
+    document.getElementById(
+      "active-player"
+    ).innerHTML = `${winnerName} wins! (marker: ${getActivePlayer().getMarker()})`;
+  };
+
   return {
     switchPlayerTurn,
     updatePlayerNames,
     getPlayerNames,
     getActivePlayer,
+    updateWinnerName,
   };
 })();
 
@@ -147,13 +154,8 @@ const handlePlayerNames = (() => {
 
     dialog.close();
     gameFlow.updatePlayerNames(player1Name, player2Name);
-    let winner = playRound.getWinner();
+    playRound.reset();
     playRound.startGame();
-    if (winner !== "") {
-      document.getElementById("active-player").innerHTML = `${
-        winner[1] === "X" ? player1Name : player2Name
-      } wins! (marker: ${winner[1]})`;
-    }
   });
 })();
 
@@ -162,6 +164,7 @@ const playRound = (() => {
   const gameStateTextArea = document.getElementById("active-player");
   const resetButton = document.getElementById("reset");
   let gameOver = false;
+  let winner = "";
 
   const updateDisplay = () => {
     let gameboard = Gameboard.getGameboard();
@@ -227,6 +230,7 @@ const playRound = (() => {
   resetButton.addEventListener("click", reset);
 
   function reset() {
+    winner = "";
     Gameboard.resetBoard();
     gameStateTextArea.innerHTML = "";
     gameOver = false;
@@ -241,8 +245,6 @@ const playRound = (() => {
     playRound;
   }
 
-  let winner = "";
-
   const checkGameOver = () => {
     if (Gameboard.isFull()) {
       gameOver = true;
@@ -254,7 +256,7 @@ const playRound = (() => {
         gameFlow.getActivePlayer().getMarker(),
       ];
       gameOver = true;
-      gameStateTextArea.innerHTML = `${winner[0]} wins! (marker: ${winner[1]})`;
+      gameFlow.updateWinnerName(winner[0]);
     }
     if (gameOver) {
       document.getElementById("end").innerHTML =
@@ -268,5 +270,5 @@ const playRound = (() => {
     return winner;
   };
 
-  return { startGame: startGame, getWinner };
+  return { startGame: startGame, getWinner, reset };
 })();
