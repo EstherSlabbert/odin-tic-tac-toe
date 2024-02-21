@@ -147,9 +147,13 @@ const handlePlayerNames = (() => {
 
     dialog.close();
     gameFlow.updatePlayerNames(player1Name, player2Name);
+    let winner = playRound.getWinner();
     playRound.startGame();
-    console.log(gameFlow.getPlayerNames());
-    console.log(gameFlow.getActivePlayer().name + "'s turn!");
+    if (winner !== "") {
+      document.getElementById("active-player").innerHTML = `${
+        winner[1] === "X" ? player1Name : player2Name
+      } wins! (marker: ${winner[1]})`;
+    }
   });
 })();
 
@@ -220,7 +224,9 @@ const playRound = (() => {
     });
   };
 
-  resetButton.addEventListener("click", () => {
+  resetButton.addEventListener("click", reset);
+
+  function reset() {
     Gameboard.resetBoard();
     gameStateTextArea.innerHTML = "";
     gameOver = false;
@@ -233,7 +239,9 @@ const playRound = (() => {
     }'s turn (marker: ${gameFlow.getActivePlayer().getMarker()})`;
     removeEventListeners();
     playRound;
-  });
+  }
+
+  let winner = "";
 
   const checkGameOver = () => {
     if (Gameboard.isFull()) {
@@ -241,10 +249,12 @@ const playRound = (() => {
       gameStateTextArea.innerHTML = `It's a tie!`;
     }
     if (Gameboard.checkWinner() !== "") {
+      winner = [
+        gameFlow.getActivePlayer().name,
+        gameFlow.getActivePlayer().getMarker(),
+      ];
       gameOver = true;
-      gameStateTextArea.innerHTML = `${
-        gameFlow.getActivePlayer().name
-      } wins! (marker: ${gameFlow.getActivePlayer().getMarker()})`;
+      gameStateTextArea.innerHTML = `${winner[0]} wins! (marker: ${winner[1]})`;
     }
     if (gameOver) {
       document.getElementById("end").innerHTML =
@@ -254,5 +264,9 @@ const playRound = (() => {
     }
   };
 
-  return { startGame: startGame };
+  const getWinner = () => {
+    return winner;
+  };
+
+  return { startGame: startGame, getWinner };
 })();
