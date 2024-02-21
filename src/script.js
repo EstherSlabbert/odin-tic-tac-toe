@@ -14,8 +14,6 @@ const Gameboard = (function () {
     }
   };
 
-  const positionIsUnavailable = (row, column) => gameboard[row][column] !== "";
-
   const isFull = () => !gameboard.flat().includes("");
 
   const checkWinner = () => {
@@ -72,118 +70,122 @@ const Gameboard = (function () {
   return {
     getGameboard,
     updateBoard,
-    positionIsUnavailable,
     isFull,
     checkWinner,
     resetBoard,
   };
 })();
 
-function createPlayer(name, marker) {
-  const getMarker = () => marker;
-  return { name, getMarker };
-}
-
-const GameController = ((player1name = "Player1", player2name = "Player2") => {
-  const board = Gameboard;
-  let gameOver = false;
-  const players = [
-    createPlayer(player1name, "X"),
-    createPlayer(player2name, "O"),
-  ];
+const gameFlow = ((player1name = "Player1", player2name = "Player2") => {
+  const createPlayer = (name, marker) => {
+    const getMarker = () => marker;
+    return { name, getMarker };
+  };
+  const player1 = createPlayer(player1name, "X");
+  const player2 = createPlayer(player2name, "O");
+  const players = [player1, player2];
   let activePlayer = players[0];
 
-  const switchPlayerTurn = () => {
+  function switchPlayerTurn() {
     activePlayer = activePlayer === players[0] ? players[1] : players[0];
-  };
+  }
 
   const getActivePlayer = () => activePlayer;
 
-  const printNewRound = () => {
-    console.log(board.getGameboard());
-    console.log(`${getActivePlayer().name}'s turn.`);
-  };
-
-  const playGame = () => {
-    const readline = require("readline");
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    });
-
-    const playRound = (row, column) => {
-      if (board.positionIsUnavailable(row, column)) {
-        console.log(
-          `Invalid move! Please try again. Position row ${row}, column ${column} is already marked.`
-        );
-        printNewRound();
-        play();
-      } else {
-        // Turn for the current player
-        console.log(
-          `${
-            getActivePlayer().name
-          } marks row ${row}, column ${column} with ${getActivePlayer().getMarker()}...`
-        );
-        board.updateBoard(row, column, getActivePlayer().getMarker());
-
-        // Check for a winner
-        const winnerMarker = board.checkWinner();
-        if (winnerMarker !== "") {
-          console.log(board.getGameboard());
-          console.log(
-            `${getActivePlayer().name}, playing with '${winnerMarker}'s, wins!`
-          );
-          gameOver = true;
-          rl.close();
-          return;
-        }
-
-        // Switch player turn
-        switchPlayerTurn();
-        printNewRound();
-        play();
-      }
-    };
-
-    const play = () => {
-      if (board.isFull()) {
-        console.log("The game is a tie!");
-        gameOver = true;
-        rl.close();
-        return;
-      } else {
-        rl.question(
-          "Enter your move (row no. (0-2) column no. (0-2) e.g., 02): ",
-          (answer) => {
-            answer = answer.trim();
-
-            if (answer.match(/[^0-2]/) || answer.length !== 2) {
-              console.log("Invalid input. Please enter a valid move.");
-              play();
-              return;
-            }
-
-            const row = parseInt(answer[0]);
-            const col = parseInt(answer[1]);
-            playRound(row, col);
-          }
-        );
-      }
-    };
-
-    if (!gameOver) {
-      // Initial play game message
-      printNewRound();
-      play();
-    }
-    rl.on("close", () => {
-      console.log("Game finished. Thanks for playing!");
-    });
-  };
-
-  return { playGame, getActivePlayer };
+  return { switchPlayerTurn, getActivePlayer };
 })();
 
-// Plays a single Tic Tac Toe Game in the console:
-GameController.playGame();
+const playRound = (() => {
+  const gameGrid = document.querySelectorAll(".cell");
+  const gameStateTextArea = document.getElementById("active-player");
+  const resetButton = document.getElementById("reset");
+  let gameOver = false;
+
+  const updateDisplay = () => {
+    let gameboard = Gameboard.getGameboard();
+    let rows = document.querySelectorAll(".row");
+    gameboard.forEach((row, rowIndex) => {
+      let htmlRow = rows[rowIndex];
+      row.forEach((cellValue, columnIndex) => {
+        let cell = htmlRow.children[columnIndex];
+        cell.textContent = cellValue;
+      });
+    });
+  };
+
+  // set initial display
+  updateDisplay();
+  gameStateTextArea.innerHTML = `${
+    gameFlow.getActivePlayer().name
+  }'s turn (marker: ${gameFlow.getActivePlayer().getMarker()})`;
+
+  const handleBoardSquareClick = (boardSquare) => {
+    // prevents rewriting
+    if (boardSquare.innerHTML == "") {
+      const row = boardSquare.getAttribute("data-row");
+      const column = boardSquare.getAttribute("data-column");
+      if (!gameOver) {
+        Gameboard.updateBoard(
+          row,
+          column,
+          gameFlow.getActivePlayer().getMarker()
+        );
+        updateDisplay();
+        checkGameOver();
+        if (!gameOver) {
+          gameFlow.switchPlayerTurn();
+          gameStateTextArea.innerHTML = `${
+            gameFlow.getActivePlayer().name
+          }'s turn (marker: ${gameFlow.getActivePlayer().getMarker()})`;
+        }
+      }
+    }
+  };
+
+  Array.from(gameGrid).forEach((boardSquare) => {
+    boardSquare.addEventListener("click", (event) => {
+      const boardSquare = event.target;
+      handleBoardSquareClick(boardSquare);
+    });
+  });
+
+  const removeEventListeners = () => {
+    Array.from(gameGrid).forEach((boardSquare) => {
+      boardSquare.removeEventListener("click", (event) => {
+        const boardSquare = event.target;
+        handleBoardSquareClick(boardSquare);
+      });
+    });
+  };
+
+  resetButton.addEventListener("click", () => {
+    Gameboard.resetBoard();
+    gameStateTextArea.innerHTML = "";
+    gameOver = false;
+    Array.from(gameGrid).forEach((boardSquare) => {
+      boardSquare.innerHTML = "";
+    });
+    document.getElementById("end").innerHTML = "";
+    removeEventListeners();
+    playRound;
+  });
+
+  const checkGameOver = () => {
+    if (Gameboard.isFull()) {
+      gameOver = true;
+      gameStateTextArea.innerHTML = `It's a tie!`;
+    }
+    if (Gameboard.checkWinner() !== "") {
+      gameOver = true;
+      gameStateTextArea.innerHTML = `${
+        gameFlow.getActivePlayer().name
+      } wins! (marker: ${gameFlow.getActivePlayer().getMarker()})`;
+    }
+    if (gameOver) {
+      document.getElementById("end").innerHTML =
+        "Game finished. Thanks for playing!";
+      removeEventListeners();
+      return;
+    }
+  };
+})();
